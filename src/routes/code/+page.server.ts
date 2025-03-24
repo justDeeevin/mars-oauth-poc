@@ -1,4 +1,4 @@
-import type { PageLoad } from './$types.js';
+import type { PageServerLoad } from './$types.js';
 import { error } from '@sveltejs/kit';
 import { CLIENT_ID, CLIENT_SECRET } from '$env/static/private';
 
@@ -30,7 +30,7 @@ type DiscordGuild = {
 
 const API_URL = 'https://discord.com/api/v10';
 
-export const load: PageLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url }) => {
   const code = url.searchParams.get('code');
   if (!code) error(400, 'No code provided');
   const state = url.searchParams.get('state');
@@ -59,6 +59,9 @@ export const load: PageLoad = async ({ url }) => {
   res = await fetch(`${API_URL}/users/@me/guilds`, { headers });
   if (res.status != 200) error(500, 'Failed to get guilds');
   let guilds = (await res.json()) as DiscordGuild[];
+  let players = await Bun.file('players.json').json();
+  players[state] = user.id;
+  Bun.write('players.json', JSON.stringify(players));
 
   return { user, guilds, state };
 };
